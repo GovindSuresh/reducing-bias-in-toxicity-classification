@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Toxic Comment Classifier</title>
+    <style>
+        * {
+            font-size: 30px
+        }
+    </style>
+</head>
+<body>
+    <input id="comment-input" type="text">
+    <button id="predict-button">Predict</button>
+    <p>Non-Toxic: <span id="Non-Toxic-prediction"></span></p>
+    <p>Toxic: <span id="Toxic-prediction"></span></p>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script>
+        $("#predict-button").click(function(event){
+            let message = {
+                comment: $("#comment-input").val()
+            }
+            $.post("http://0.0.0.0:5000/predict", JSON.stringify(message), function(response){
+                $("#Non-Toxic-prediction").text(response.prediction.non_toxic.toFixed(3));
+                $("#Toxic-prediction").text(response.prediction.toxic.toFixed(3));
+                console.log(response);
+            });
+        });
+    </script>
+
+</body>
+</html>

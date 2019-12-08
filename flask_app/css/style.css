@@ -1,0 +1,40 @@
+body{
+    font-family: Helvetica, sans-serif;
+    font-size: 15px;
+    line-height: 1.2;
+    padding: 0;
+    margin: 0;
+    background-color: #fdfdfd;
+}
+/* Global stuff */
+.container{
+    width: 70%;
+    margin: auto;
+    overflow:hidden;
+}
+
+/* Headers*/
+header{
+    background: rgb(255, 102, 112);
+    color: #ffff;
+    padding-top: 80px;
+    min-height: 70px;
+    vertical-align: middle;
+    border-bottom: #e8491d 3px solid;
+}
+
+h1 {
+    font-weight: bold;
+    color: #fff;
+    font-size: 32px;
+  }
+  
+h2 {
+    font-weight: bold;
+    color: rgb(80, 80, 80);
+    font-size: 24px;
+  }
+
+p {
+    font-size: 15px;
+}
