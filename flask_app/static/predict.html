@@ -18,62 +18,69 @@
         <div class="container">
             <div id="proj">
                 <h1>Reducing Bias in Toxic Comment Classification</h1>
-            </div>
-            
+            </div>   
         </div>
     </header>
     
-    <section id="Project Overview">
+    <section id="boxes">
         <div class="container">
-            <h2>Problem Space</h2>
-            <p>
-                    As Machine Learning is increasingly used in our day to day lives, 
-                    issues surrounding the reinforcement of existing biases against minority identities are increasingly important. 
-                    We are exploring this from the scope of online toxic comment classification
-            </p>
-            <p> 
-                <ul>
-                    <li> Classic ML classification models, such as Logistic, perform very well in terms of accuracy</li>
-                    <li> However they have a tendency to over-weight words that refer to identites, particulary those of
-                        minorities (Black, Latino, LGBT, e.t.c).
-                    </li>
-                    <li> As a result comments involving these groups tend to be more likely to be classified as toxic, even
-                        when the content and context of the comment would suggest otherwise.
-                </ul>       
-            </p>
+            <h2> Bias in Machine Learning and NLP</h2>
+            <div class="box">
+                <p> 
+                There remains entreched biases against minorities in society which is reflected in the data. 
+                </p>
+            </div>
+            <div class="box">
+                <p> 
+                Traditional ML models and NLP processes are highly sensitive to this existing bias.
+                </p>
+            </div>
+            <div class="box">
+                <p> 
+                As a result, words referring to minority identities become associated with toxicity.
+                </p>
+            </div>
+        </div>
+    </section>
+    <section id="lime-viz">
+            <div class="container">
+                <h2>Visualising the issues with traditional ML models</h2>
+                <p>
+                    To highlight this issue we have run our Logistic Regression model through the ELI5 package.
+                    The below comment was originally labelled 'Non-Toxic' however our model has missclassified it as 'Toxic'.
+                </p>
+                <img src="img/missclass-lgbt2.png", class="centerImage", width="1000" height="150" style="padding-top: 20px">
+                <figcaption id="subtitle">Original text:</figcaption>
+                <figcaption id='orig-text'> 'I think your hearts in the right place but gay men and lesbians have no issues using the correctly gendered bathrooms. 
+                    Sexual orientation and gender identity are two totally different things. 
+                    A transgender person can be gay, lesbian, bi, straight or any other Sexual orientation.'</figcaption>
+    
+               
+            </div>
+        </section>
+
+    <section id="Solution">
+        <div class="container">
             <h2>Our Solution</h2>
             <p>          
                 Our aim is to train a neural network model, primarily an LSTM model, to classify toxic comments. 
+                
+                <img src = "img/LSTM_gif.gif", class="centerImage", alt="LSTM gif", height=500px , width=900px, >
+                <figcaption id="lstm-capt"> Animated process of an LSTM Cell <a class='credit', href = "https://towardsdatascience.com/animated-rnn-lstm-and-gru-ef124d06cf45">Credit - Raimi Karim</a> </figcaption>
                 <ul>
                     <li>
                         RNN's such as LSTM are optimally suited to tackling this problem due to their ability
                         to remember information contained at different parts of a sequence
                     </li>
                     <li>
-                        Our expectation is that the LSTM model will be able to decipher the underlying <span style="font-weight:bold; font-size:19px">context</span>
+                        Our expectation is that the LSTM model will be able to decipher the <span style="font-weight:bold; font-size:19px">underlying context</span>
                         of a comment as opposed to just weighting individual words.
                     </li>
                 </ul>
                 
             </p> 
             <p>       
-                    We also trained a handful of classic models, namely: Logistic, XGBoost, and Random Forest, to allow us to compare results
-            </p>
-        </div>
-    </section>
-
-    <section id="lime-viz">
-        <div class="container">
-            <h2>Visualising the issues with classic ML models</h2>
-            <p>
-                To highlight the bias issue with classic models we have run our Logistic Regression model through the ELI5 package.
-            </p>
-            <img src="img/missclass-lgbt.png" width="900" height="250" style="padding: 10px">
-            <figcaption> A misclassified non-toxic comment post standard NLP processing and Logistic regression </figcaption>
-            <p>
-                Our model has highlighted the word homosexual repeatedly as a key contribution to its classification of Toxic.
-                The original text mentions how the commenter felt the condemnation of young homosexual men was  
-            
+                    We also trained a handful of traditional models, namely: Logistic, XGBoost, and Random Forest, to allow us to compare results
             </p>
         </div>
     </section>
@@ -104,6 +111,87 @@
             </script>
         </div>
     </section>
+    
+    <Section id="Results">
+        <div class="container">
+            <h2> Results </h2>
+            <table class="results-table">
+                    <thead>
+                    <tr>
+                    <th>Model</th>
+                    <th>Accuracy</th>
+                    <th>F1</th>
+                    <th>Final Bias Metric</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                    <td>Logistic</td>
+                    <td>94.7%</td>
+                    <td>59.9%</td>
+                    <td>71.3%</td>
+                    </tr>
+                    <tr>
+                    <td>XGBoost</td>
+                    <td>94.4%</td>
+                    <td>53.7%</td>
+                    <td>71.3%</td>
+                    </tr>
+                    <tr>
+                    <td>Random Forest</td>
+                    <td>94.2%</td>
+                    <td>47.9%</td>
+                    <td>61.1%</td>
+                    </tr>
+                    <tr>
+                    <td style=font-weight:bold>LSTM</td>
+                    <td style=font-weight:bold>95.3%</td>
+                    <td style=font-weight:bold>68.1%</td>
+                    <td style=font-weight:bold>92.0%</td>
+                    </tr>
+                    </tbody>
+                    </table>
+            <figcaption id='result-table-capt'> Results table for trained models </figcaption>
+            <p>
+                <ul>
+                    <li>
+                        All the models performed well from a pure accuracy standpoint. Some issues with recall, primarily due to class imbalance.
+                    </li>
+                    <li>
+                        Our LSTM model performed appreciably better than the other models in terms of the final metric
+                        with a score of 0.920. This means the LSTM was able to avoid classifying non-toxic examples mentioning a subgroup identity.
+                    </li>
+                    <li>
+                        We therefore view this as a step in the right direction in building less biased toxic comment classifiers. There remains 
+                        many further avenues to explore with the neural network architecture, but this is a promising first step!
+                    </li>
+                    </ul>
+            </p>
+        </div>
+    </Section>
+    <Section>
+        <div class="container">
+            <h2> Future Avenues of Exploration</h2>
+            <p>
+            <ul>
+                <li>
+                    Addressing class imbalance without introducing over/underfitting.
+                </li>
+                <li>
+                    We would also like to explore further enhancements to our neural network. Due to the computing requirement to train the network, we were unable
+                    to carry out detailed hyperparameter optimziation or assess the impact of adding additional layers or further dropout.
+                </li>
+                <li>
+                    Observe the impact of different word embeddings. Or, potentially train our own set based on online comments.
+                </li>
+                </ul>
+            </p>
+        </div>
+    </Section>
+    <div class="container">
+    <hr>
+    <hr>
+    </div>
     <section>
         <div class="container">
             <h2> How do we measure bias?</h2>
@@ -121,59 +209,16 @@
                 We split the predicted results for each subgroup and calculate the false positve and false negative rates. In other words
                 we calculate the subgroup AUC.
                 <li>
-                We then calculate a generalized mean of the subgroup AUCs
+                We then calculate a generalized mean of the subgroup AUCs.  
                 </li>
                 <li>
-                Finally we combine this mean with the overall AUC to give the final metric. Effectivley a low score here means that while the model
+                Finally we combine this mean with the overall AUC to give the final metric. 
+                </li>
+                <li>
+                Effectivley a low score here means that while the model
                 may have been good at classifying toxic comments in general. It had a tendency to overweight comments mentioning a particular identity or
                 underweight comments mentioning that identity. A strong model with minimised bias is one that can understand the context around words that refer to a particular identity.
                 </li>
             </ul>
-
-
-        </div>
-    </section>
-    <Section id="Results">
-        <div class="container">
-            <h2> Results </h2>
-            <img src="img/results-table.png" width="550" height="180" class="center">
-            <p>
-                <ul>
-                    <li>
-                        As you can see, all the models performed well from a pure accuracy standpoint, however there were issues
-                        with the other metrics, particularly recall. This is primarily due to a large class imbalance in the dataset.
-                        We will explore the impact of addressing this imbalance on model performance later
-                    </li>
-                    <li>
-                        Importantly from a final bias metric point of view. Our LSTM model performed appreciably better than the other models 
-                        with a score of 0.920. This means the LSTM was able to avoid issues of miss-classifying non-toxic comments involving
-                        the specified subgroups while also still capturing the toxic examples involving them. 
-                    </li>
-                    <li>
-                        We therefore view this as a step in the right direction in building less biased toxic comment classifiers. There remains 
-                        many further avenues to explore with the neural network architecture, but this is a promising first step!
-                    </li>
-                    </ul>
-            </p>
-        </div>
-    </Section>
-    <Section>
-        <div class="container">
-            <h2> Future Avenues of Exploration</h2>
-            <p>
-                <ul>
-                    <li>
-                        As mentioned above, we would like to assess the impact of addressing the class imbalance on model performance. Given the absolute
-                        disparity between Toxic and Non-Toxic cases, this will have to be implemented carefully as simple over or undersampling would significantly
-                        change the make-up of the dataset and lead to over/underfitting issues.
-                    </li>
-                    <li>
-                        We would also like to explore further enhancements to our neural network. Due to the computing requirement to train the network, we were unable
-                        to carry out detailed hyperparameter optimziation or the impact of adding additional layers or further dropout.
-                    </li>
-                </ul>
-            </p>
-        </div>
-    </Section>
 </body>
 </html>
