@@ -30,6 +30,8 @@ Effectively we split the predictions into those for each selected subgroup, calc
      - The dataset can be downloaded from [kaggle](https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification/data). Please download and store this in the subdirectory named ```data``` in your main project directory. If not you will need to manually change certain relative file paths within the code.
      - Word Embeddings can be downloaded from the [GloVE](https://nlp.stanford.edu/projects/glove/) page. We have specifically used the Common Crawl (840B tokens, 2.2M vocab, cased, 300d vectors, 2.03 GB download) file, however others can be used. Please download and store this file in the subdirectory named ```embeds``` in the main project directory.
 
-- 
+
+
+
 
  
