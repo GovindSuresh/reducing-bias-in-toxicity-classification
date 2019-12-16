@@ -1,6 +1,6 @@
 body{
     font-family: Helvetica, sans-serif;
-    font-size: 15px;
+    font-size: 20px;
     line-height: 1.2;
     padding: 0;
     margin: 0;
@@ -8,7 +8,7 @@ body{
 }
 /* Global stuff */
 .container{
-    width: 70%;
+    width: 75%;
     margin: auto;
     overflow:hidden;
 }
@@ -17,32 +17,33 @@ body{
 header{
     background: rgb(255, 102, 112);
     color: #ffff;
-    padding-top: 80px;
+    padding-top: 70px;
     min-height: 70px;
     vertical-align: middle;
     border-bottom: #e8491d 3px solid;
 }
 
 h1 {
+    padding-top: 20px;
     font-weight: bold;
     color: #fff;
-    font-size: 32px;
+    font-size: 38px;
   }
   
 h2 {
     font-weight: bold;
     color: rgb(80, 80, 80);
-    font-size: 24px;
+    font-size: 28px;
+    padding-bottom: 20px;
+    padding-top: 20px;
   }
 
 /* Paragraph */
 p {
-    font-size: 18px;
+    font-size: 20px;
 }
 
 /* Button */
-
-
 
 form {
     
@@ -73,23 +74,119 @@ form {
     padding: 4px
 }
 li {
-    font-size: 18px;
+    font-size: 20px;
     margin: 1em 0;
 }
 
-figcaption{
-    font-size: 15px;
-    font-style: italic;
+#subtitle{
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: underline;
+    padding-top: 20px;
 }
 
-.center{
-    display: block;
-    padding-top: 30px;
-    margin-left: auto;
-    margin-right: auto;
+#lime-capt{
+    font-size: 18px;
+    font-style: italic;
+    text-align: center;
+    padding-bottom: 20px;
+}
+#orig-text{
+    font-size: 18px;
+    font-style: italic;
+    padding-top: 10px;
     
 }
 
-a {
-    font-size: 18px; 
+#lstm-capt{
+    font-size: 18px;
+    font-style: italic;
+    text-align: center;
+    padding-bottom: 20px;
 }
+#result-table-capt{
+    font-size: 18px;
+    font-style: italic;
+    text-align: center;
+    padding-top: 20px;
+}
+
+a {
+    font-size: 20px; 
+}
+
+.centerImage {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 20px;
+}
+
+.credit {
+    font-size: 14px
+}
+
+#boxes{
+    margin-top:25px;
+
+}
+#boxes .box {
+    width: 28%; 
+    display: inline-block;
+    vertical-align: top;   
+    border:5px solid #6da48c;
+    text-align:center;
+    margin:1%;
+    border-radius: 25px;
+    padding-left: 5px;
+    padding-right: 5px;    
+    
+}
+
+hr {
+    border: 0;
+    
+    border-bottom: 4px dashed #ccc;
+    padding-top: 20px
+    
+}
+
+/* table css generated from online table generator https://divtable.com/table-styler/ */
+table.results-table {
+    font-family: Helvetica, Arial, sans-serif;
+    border: 1px solid #FFFFFF;
+    width: 600px;
+    height: 150px;
+    text-align: center;
+    border-collapse: collapse;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  table.results-table td, table.results-table th {
+    border: 0px solid #FFFDFD;
+    padding: 10px 2px;
+  }
+  table.results-table tbody td {
+    font-size: 17px;
+    color: #000000;
+  }
+  table.results-table tr:nth-child(even) {
+    background: #66DDAA;
+  }
+  table.results-table thead {
+    background: rgb(255, 102, 112);
+    border-bottom: 5px solid #FFFFFF;
+  }
+  table.results-table thead th {
+    font-size: 17px;
+    font-weight: bold;
+    color: #FFFFFF;
+    text-align: center;
+  }
+  table.results-table tfoot td {
+    font-size: 14px;
+  }
+  /*
+  rgb(255, 102, 112)
+  #76B298
+  */

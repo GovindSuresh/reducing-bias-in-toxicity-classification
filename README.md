@@ -19,4 +19,17 @@ We will use the standard acccuracy score as a gauge of how good the models are a
 
 Effectively we split the predictions into those for each selected subgroup, calculate the AUC and then take the weighted means of the subgroup AUC and overall AUC. A low score here suggests that while your model may be good at identifying toxic comments, it is biased against certain identity groups.
 
-## Project Structure
+## Project Set up:
+
+- Download project from [github](https://github.com/GovindSuresh/reducing-bias-in-toxicity-classification)
+
+- Project Requirements:
+     - Please create a new virtual environment using the ```requirements.txt``` file provided. The project mostly uses standard python ML libraries such as scikit-learn, pandas, and numpy. For NLP work we have primarily used the NLTK library.  For deep learning we have used TensorFlow 2.0 and Keras 2.4.1. 
+     
+- Data and other downloads:
+     - The dataset can be downloaded from [kaggle](https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification/data). Please download and store this in the subdirectory named ```data``` in your main project directory. If not you will need to manually change certain relative file paths within the code.
+     - Word Embeddings can be downloaded from the [GloVE](https://nlp.stanford.edu/projects/glove/) page. We have specifically used the Common Crawl (840B tokens, 2.2M vocab, cased, 300d vectors, 2.03 GB download) file, however others can be used. Please download and store this file in the subdirectory named ```embeds``` in the main project directory.
+
+- 
+
+ 
