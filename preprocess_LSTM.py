@@ -1,5 +1,8 @@
 
 # Text Preprocessing for LSTM model. 
+# The code is based off the experimentation done in the EDA.ipynb and Preprocessing.ipynb.
+# Please see these notebooks to read more about the cleaning/preprocessing steps for this exercise.
+# This script takes in the training dataset for this project and outputs the processed dataset to be used for the LSTM model.
 
 #Imports
 import pandas as pd 
@@ -121,24 +124,24 @@ def dataframe_cleaner(df):
     df.drop([i for i in df.columns if i not in cols_to_keep], axis=1, inplace=True)
 
     # first is to fill the nulls in the identity column. 
-    columns = train_df.loc[:,'black':'white'].columns
+    columns = df.loc[:,'black':'white'].columns
     for i in columns:
         df[i].fillna(0, inplace=True)
 
-    cols_to_binarize = df.drop(['id','comment_text'], axis=1).columns
     #binarize target column and identity columns
-    def binarize_cols(df, col_name):
-    df[col_name] = np.where(df[col_name] >= 0.5, 1, 0)
-
+    cols_to_binarize = df.drop(['id','comment_text'], axis=1).columns
+    
     def convert_df_to_binary(df, cols):
-    bin_df = df.copy()
-    for col in cols :
-        binarize_cols(bin_df, col)
-    return bin_df
+        bin_df = df.copy()
+        for col in cols :
+             bin_df[col] = np.where(df[col] >= 0.5, 1, 0)
+        
+        return bin_df
 
-    df = convert_df_to_binary(df, columns))
+    df = convert_df_to_binary(df, cols_to_binarize)
 
     return df
+
 
 #set up parser
 def set_args():
@@ -146,7 +149,7 @@ def set_args():
     parser.add_argument('data_file', type=str, help='Filepath of the data csv file')
     parser.add_argument('text_col', type=str, help='Text column in dataframe')
     parser.add_argument('text_col_clean',  type=str, help='Name of cleaned column')
-    parser.add_argument('cleaned_file_destination',  type=str, help='Filepath to save the cleaned csv (includes file_name')
+    parser.add_argument('cleaned_file_destination',  type=str, help='Filepath to save the cleaned csv (includes file_name)- Has to be an existing directory')
     parser.add_argument('embedding_file', type=str, help='Filepath of word embeddings')
 
     return parser.parse_args()
@@ -163,7 +166,6 @@ if __name__ == '__main__':
     TEXT_COL_CLEAN = args.text_col_clean
     CLEANED_FILE = args.cleaned_file_destination
     GLOVE_FILE = args.embedding_file
-  
 
     print("Loading Data...")
     
