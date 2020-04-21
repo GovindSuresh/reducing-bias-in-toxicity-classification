@@ -62,7 +62,7 @@ def build_vocab(texts):
 
 #Function to do the pre-processing
 
-def preprocess(df, col_name, clean_col_name):
+def text_preprocess(df, col_name, clean_col_name):
     '''
     Carries out the text pre-processing for the LSTM model. Changes are done in place.
 
@@ -104,6 +104,42 @@ def preprocess(df, col_name, clean_col_name):
     
     return None
 
+# Function to remove null values from dataset and drop uneeded columns:
+def dataframe_cleaner(df):
+    '''
+    This function removes the null values from our dataset as decided in the EDA.ipynb
+    INPUTS: df - Dataframe
+    OUTPUTS: dataframe with nulls removed
+    '''
+
+    #Colums to keep 
+    cols_to_keep = ['id', 'target', 'comment_text',
+    'male', 'female', 'homosexual_gay_or_lesbian', 'christian', 'jewish',
+    'muslim', 'black', 'white', 'psychiatric_or_mental_illness']
+
+    # drop all columns not in above list
+    df.drop([i for i in df.columns if i not in cols_to_keep], axis=1, inplace=True)
+
+    # first is to fill the nulls in the identity column. 
+    columns = train_df.loc[:,'black':'white'].columns
+    for i in columns:
+        df[i].fillna(0, inplace=True)
+
+    cols_to_binarize = df.drop(['id','comment_text'], axis=1).columns
+    #binarize target column and identity columns
+    def binarize_cols(df, col_name):
+    df[col_name] = np.where(df[col_name] >= 0.5, 1, 0)
+
+    def convert_df_to_binary(df, cols):
+    bin_df = df.copy()
+    for col in cols :
+        binarize_cols(bin_df, col)
+    return bin_df
+
+    df = convert_df_to_binary(df, columns))
+
+    return df
+
 #set up parser
 def set_args():
     parser = argparse.ArgumentParser(description='LSTM preprocess script')
@@ -127,20 +163,23 @@ if __name__ == '__main__':
     TEXT_COL_CLEAN = args.text_col_clean
     CLEANED_FILE = args.cleaned_file_destination
     GLOVE_FILE = args.embedding_file
-    FILE_TYPE = args.file_type
+  
 
-    print("Loading Data:")
+    print("Loading Data...")
     
     df = pd.read_csv(DATA_FILE)
     
-    print("Processing file")
+    print("Processing file...")
     
-    #Run preprocessing script
-    preprocess(df, TEXT_COL, TEXT_COL_CLEAN)
+    #Drop uneeded columns fill nulls and binarize columns
+    df = dataframe_cleaner(df)
+
+    #Run text preprocessing function
+    text_preprocess(df, TEXT_COL, TEXT_COL_CLEAN)
     
-    print("Finished processing file")
-    print("Saving File")
+    print("Finished processing file...")
+    print("Saving File...")
     
     # Save down cleaned file
-    pd.to_csv(CLEANED_FILE)
+    df.to_csv(CLEANED_FILE)
     print(f'SAVED FILE TO:{CLEANED_FILE}')
