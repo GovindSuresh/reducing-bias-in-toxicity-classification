@@ -30,6 +30,38 @@ Effectively we split the predictions into those for each selected subgroup, calc
      - The dataset can be downloaded from [kaggle](https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification/data). Please download and store this in the subdirectory named ```data``` in your main project directory. If not you will need to manually change certain relative file paths within the code.
      - Word Embeddings can be downloaded from the [GloVE](https://nlp.stanford.edu/projects/glove/) page. We have specifically used the Common Crawl (840B tokens, 2.2M vocab, cased, 300d vectors, 2.03 GB download) file, however others can be used. Please download and store this file in the subdirectory named ```embeds``` in the main project directory.
 
+## Contents:
+
+### Notebooks:
+
+At present the key files to read are contained in the notebooks folder. These notebooks go through the modelling process for my initial results which are discussed in the `Report.ipynb` file and also in more detail on my [personal website](https://govindsuresh.github.io/articles/2020-01/reducing-bias-in-toxic-comments).
+- EDA.ipynb: This notebook goes through the initial cleaning steps on the data, mainly dropping columns that wouldn't be used and also dealing with null values. Some data exploration was also done. 
+     
+- Preprocessing.ipynb: Here, we develop the NLP process pipelines to prepare our data for the LSTM model and other ML models trained. The two sets of model types required different NLP  techniques given that we were using pre-trained word embeddings for the LSTM model. 
+     
+- ML_models.ipynb: Here, we go through the usual modelling process for our 'regular' ML classification models. 
+     
+- NN_model.ipynb: This is the notebook for the LSTM model. 
+
+### Scripts:
+
+*These files are currently being worked on - 22/04/19*
+
+
+## Next Steps:
+
+We are currently in the process of taking the cleaning and preprocessing steps from the notebooks and converting them into a python script to create a data pipeline. We will then move onto the models to turn them into scripts.
+
+The final aim is to have the project in a form such that one could easily run the scripts to train the model - likely on cloud platforms such as GCP's AI Platform and AWS Sagemaker
+
+*22/04/19*
+
+- Write LSTM preprocessing script
+- Write ML model preprocessing script
+
+
+
+
 
 
 
