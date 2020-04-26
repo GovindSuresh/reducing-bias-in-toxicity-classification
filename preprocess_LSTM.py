@@ -124,7 +124,7 @@ def dataframe_cleaner(df):
     df.drop([i for i in df.columns if i not in cols_to_keep], axis=1, inplace=True)
 
     # first is to fill the nulls in the identity column. 
-    columns = df.loc[:,'black':'white'].columns
+    columns = df.loc[:,cols_to_keep].columns
     for i in columns:
         df[i].fillna(0, inplace=True)
 
