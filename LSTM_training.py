@@ -3,6 +3,14 @@ import pandas as pd
 import numpy as np
 from ast import literal_eval
 import datetime, os
+import matplotlib.pyplot as plt
+
+#sklearn imports
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
 
 #tensorflow imports
 import tensorflow as tf
@@ -54,7 +62,7 @@ def train_tokenizer(train_data, vocab_size):
 
 def text_padder(text, tokenizer):
 
-    return sequence.pad_sequences(tokenizer.texts_to_sequences(text), maxlen=MAX_LEN_SEQ)
+    return sequence.pad_sequences(tokenizer.texts_to_sequences(text), maxlen=MAX_LEN_SEQ, padding='post')
 
 
 def build_embedding_matrix(tokenizer_word_index, EMBEDDING_FILE):
@@ -77,7 +85,7 @@ def build_embedding_matrix(tokenizer_word_index, EMBEDDING_FILE):
 
     # Now we build the embedding matrix for our vocabulary OOV words will be assigned 0
 
-    embedding_matrix = np.zeroes((len(tokenizer_word_index)+1, EMBED_DIM))
+    embedding_matrix = np.zeros((len(tokenizer_word_index)+1, EMBED_DIM))
 
 
     for word, i in tokenizer_word_index.items():
@@ -148,11 +156,11 @@ def train_model(train_df, val_df, tokenizer):
     fitted_model - fit history
     '''
     # Create processed and padded train and targets
-    print('padding_text')
+    print('padding text')
     X_train = text_padder(train_df[TRAIN_TEXT_COL], tokenizer)
     X_val = text_padder(val_df[TRAIN_TEXT_COL], tokenizer)
     y_train = train_df[TRAIN_TARGET_COL]
-    y_val = val_df[TRAIN_TARGET_COL])
+    y_val = val_df[TRAIN_TARGET_COL]
     
     print('building embedding matrix')
     # build embedding matrix
@@ -175,11 +183,108 @@ def train_model(train_df, val_df, tokenizer):
                              batch_size = BATCH_SIZE,
                              epochs = NUM_EPOCHS,
                              validation_data=(X_val, y_val),
-                             callbacks=[cp_callback],
+                             callbacks=[cp_callback, lr_schedule],
                              verbose = 1)
 
     return model, fitted_model
 
+def process_test_data(test_data, tokenizer):
+
+    return text_padder(test_data, tokenizer)
+
+    
+def model_evaluation(test_preds, test_labels):
+    '''
+    Evaluates the models against accuracy, F1 Score, and the final weighted bias metric as discussed in the project write-up
+
+        
+    '''
+    # Define subgroup metrics
+    SUBGROUP_AUC = 'subgroup_auc'
+    BPSN_AUC = 'bpsn_auc'  # stands for background positive, subgroup negative
+    BNSP_AUC = 'bnsp_auc'  # stands for background negative, subgroup positive
+
+    # These calculations have been provided by Jigsaw AI for scoring based on the metrics of the kaggle competition
+    # https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification/overview/evaluation
+
+    # They work by filtering the relevant dataframe into specific subgroups and using the roc_auc_score metric from sklearn.
+
+    def compute_auc(y_true, y_pred):
+        try:
+            return metrics.roc_auc_score(y_true, y_pred)
+        except ValueError:
+            return np.nan
+
+    def compute_subgroup_auc(df, subgroup, label, model_name):
+        subgroup_examples = df[df[subgroup]]
+        return compute_auc(subgroup_examples[label], subgroup_examples[model_name])
+
+    def compute_bpsn_auc(df, subgroup, label, model_name):
+        """Computes the AUC of the within-subgroup negative examples and the background positive examples."""
+        subgroup_negative_examples = df.loc[df[subgroup] & ~df[label]]
+        non_subgroup_positive_examples = df.loc[~df[subgroup] & df[label]]
+        examples = subgroup_negative_examples.append(non_subgroup_positive_examples)
+        return compute_auc(examples[label], examples[model_name])
+
+    def compute_bnsp_auc(df, subgroup, label, model_name):
+        """Computes the AUC of the within-subgroup positive examples and the background negative examples."""
+        subgroup_positive_examples = df.loc[df[subgroup] & df[label]]
+        non_subgroup_negative_examples = df.loc[~df[subgroup] & ~df[label]]
+        examples = subgroup_positive_examples.append(non_subgroup_negative_examples)
+        return compute_auc(examples[label], examples[model_name])
+
+    def compute_bias_metrics_for_model(dataset,
+                                    subgroups,
+                                    model,
+                                    label_col,
+                                    include_asegs=False):
+        """Computes per-subgroup metrics for all subgroups and one model."""
+        records = []
+        for subgroup in subgroups:
+            record = {
+                'subgroup': subgroup,
+                'subgroup_size': len(dataset.loc[dataset[subgroup]])
+            }
+            record[SUBGROUP_AUC] = compute_subgroup_auc(dataset, subgroup, label_col, model)
+            record[BPSN_AUC] = compute_bpsn_auc(dataset, subgroup, label_col, model)
+            record[BNSP_AUC] = compute_bnsp_auc(dataset, subgroup, label_col, model)
+            records.append(record)
+        return pd.DataFrame(records).sort_values('subgroup_auc', ascending=True)
+
+    def calculate_overall_auc(df, model_name):
+        true_labels = df[TOXICITY_COLUMN]
+        predicted_labels = df[model_name]
+        return metrics.roc_auc_score(true_labels, predicted_labels)
+
+    def power_mean(series, p):
+        total = sum(np.power(series, p))
+        return np.power(total / len(series), 1 / p)
+
+    def get_final_metric(bias_df, overall_auc, POWER=-5, OVERALL_MODEL_WEIGHT=0.25):
+        bias_score = np.average([
+            power_mean(bias_df[SUBGROUP_AUC], POWER),
+            power_mean(bias_df[BPSN_AUC], POWER),
+            power_mean(bias_df[BNSP_AUC], POWER)
+        ])
+        return (OVERALL_MODEL_WEIGHT * overall_auc) + ((1 - OVERALL_MODEL_WEIGHT) * bias_score)
+    
+    # Compute standard metrics 
+    model_accuracy = accuracy_score(test_labels,test_preds)
+    model_precision = precision_score(test_labels, test_preds)
+    model_recall = recall_score(test_labels,test_preds)
+    model_f1 = f1_score(test_labels, test_preds)
+
+    # Compute the bias metrics dataframe and final weighted score
+    nn_bias_metrics_df_test = compute_bias_metrics_for_model(test_results, identity_columns, MODEL_NAME, TOXICITY_COLUMN)
+    nn_final_metric_test = get_final_metric(nn_bias_metrics_df_test, calculate_overall_auc(test_results, MODEL_NAME))
+
+    results_df = pd.DataFrame(data=[[model_accuracy, model_precision, model_recall, model_f1, nn_final_metric_test]], index=['model_name'], 
+                                columns=['model_accuracy','model_precision', 'model_recall', 'model_f1', 'final_weighted_bias'],
+                            )
+
+    return nn_bias_metrics_df_test, results_df
+
+        
 
 
 
