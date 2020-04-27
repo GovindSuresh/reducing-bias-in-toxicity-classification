@@ -1,7 +1,6 @@
 # regular import
 import pandas as pd
 import numpy as np
-from ast import literal_eval
 import datetime, os
 import matplotlib.pyplot as plt
 
@@ -11,6 +10,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
+from sklearn.metrics import roc_auc_score
 
 #tensorflow imports
 import tensorflow as tf
@@ -24,14 +24,20 @@ from tensorflow.keras.metrics import AUC
 from tensorflow.keras.optimizer import Adam
 
 
-# File Parameters
+# File parameters
 TRAIN_TEXT_COL = 'comment_text_clean2'
 TEST_TEXT_COL = 'comment_text_clean2'
 TRAIN_TARGET_COL = 'target'
 TEST_TARGET_COL = 'target'
+IDENTITY_COLUMNS = [
+    'male', 'female', 'homosexual_gay_or_lesbian', 'christian', 'jewish',
+    'muslim', 'black', 'white', 'psychiatric_or_mental_illness'] # Don't change these unless you have edited the preprocessing script to include more
 EMBEDDING_FILE = 'embeds/glove.840B.300d.txt' #change this if you are using a different embedding file
 CHECKPOINT_PATH = "NN_models/cp.ckpt"
 CHECKPOINT_DIR = os.path.dirname(CHECKPOINT_PATH)
+
+# General parameters
+
 
 
 ## Text related parameters
@@ -103,7 +109,7 @@ def build_embedding_matrix(tokenizer_word_index, EMBEDDING_FILE):
             
     return embedding_matrix
 
-def build_model(embedding_matrix, tokenizer):
+def build_model(embedding_matrix, tokenizer, model_name):
 
     input_words = Input(shape=(MAX_LEN_SEQ,), dtype='int32')
 
@@ -125,7 +131,7 @@ def build_model(embedding_matrix, tokenizer):
 
     opt = Adam(lr=LEARNING_RATE)
 
-    model = Model(inputs=input_words, outputs=prediction, name='baseline-LSTM')
+    model = Model(inputs=input_words, outputs=prediction, name=model_name)
 
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy', AUC()])
 
@@ -142,18 +148,19 @@ def lr_scheduler(epoch):
 
     return lr
 
-def train_model(train_df, val_df, tokenizer):
+def train_model(train_df, val_df, tokenizer, model_name):
     '''
     Function to train a tensorflow model. This function runs a number of the previous functions
     
     INPUT:
-    train_df - training data
-    val_df - validation data
-    tokenizer - fitted keras tokenizer
+    DF: train_df - training data
+    DF: val_df - validation data
+    OBJ: tokenizer - fitted keras tokenizer
+    STR: model_name - Name for model 
     
     OUTPUT:
-    model - tensorflow model
-    fitted_model - fit history
+    OBJ: model - tensorflow model
+    OBJ: model_hist - fit history
     '''
     # Create processed and padded train and targets
     print('padding text')
@@ -168,7 +175,7 @@ def train_model(train_df, val_df, tokenizer):
     
     # build model
     print('building model')
-    model = build_model(embed_matrix, tokenizer)
+    model = build_model(embed_matrix, tokenizer, model_name)
     
     # set up checkpoint callbacks
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=CHECKPOINT_PATH,
@@ -179,24 +186,31 @@ def train_model(train_df, val_df, tokenizer):
    
     # train model batch size and epochs were set up earlier.
     print('training model')
-    fitted_model = model.fit(X_train, y_train,
+    model_hist = model.fit(X_train, y_train,
                              batch_size = BATCH_SIZE,
                              epochs = NUM_EPOCHS,
                              validation_data=(X_val, y_val),
                              callbacks=[cp_callback, lr_schedule],
                              verbose = 1)
 
-    return model, fitted_model
+    return model, model_hist
 
 def process_test_data(test_data, tokenizer):
 
     return text_padder(test_data, tokenizer)
 
     
-def model_evaluation(test_preds, test_labels):
+def model_evaluation(test_preds, test_labels, test_df, model_name):
     '''
     Evaluates the models against accuracy, F1 Score, and the final weighted bias metric as discussed in the project write-up
+    Inputs:
+    Array: test_preds - Predicted labels for the test set
+    Array: test_labels - True labels for the test set 
+    Dataframe:  test_df - test dataframe, needed for the final bias metric calculation
 
+    Outputs:
+    nn_bias_metrics_df_test = dataframe showing bias metric scores against the specific identify subgroups
+    results_df = dataframe of metrics for the model 
         
     '''
     # Define subgroup metrics
@@ -211,7 +225,7 @@ def model_evaluation(test_preds, test_labels):
 
     def compute_auc(y_true, y_pred):
         try:
-            return metrics.roc_auc_score(y_true, y_pred)
+            return roc_auc_score(y_true, y_pred)
         except ValueError:
             return np.nan
 
@@ -252,9 +266,9 @@ def model_evaluation(test_preds, test_labels):
         return pd.DataFrame(records).sort_values('subgroup_auc', ascending=True)
 
     def calculate_overall_auc(df, model_name):
-        true_labels = df[TOXICITY_COLUMN]
+        true_labels = df[TEST_TARGET_COL]
         predicted_labels = df[model_name]
-        return metrics.roc_auc_score(true_labels, predicted_labels)
+        return roc_auc_score(true_labels, predicted_labels)
 
     def power_mean(series, p):
         total = sum(np.power(series, p))
@@ -268,17 +282,26 @@ def model_evaluation(test_preds, test_labels):
         ])
         return (OVERALL_MODEL_WEIGHT * overall_auc) + ((1 - OVERALL_MODEL_WEIGHT) * bias_score)
     
+    # Binarize the y_predictions:
+
+    test_preds_bin = np.where(test_preds >=0.5, 1, 0)
+
     # Compute standard metrics 
-    model_accuracy = accuracy_score(test_labels,test_preds)
-    model_precision = precision_score(test_labels, test_preds)
-    model_recall = recall_score(test_labels,test_preds)
-    model_f1 = f1_score(test_labels, test_preds)
+    model_accuracy = accuracy_score(test_labels,test_preds_bin)
+    model_precision = precision_score(test_labels, test_preds_bin)
+    model_recall = recall_score(test_labels,test_preds_bin)
+    model_f1 = f1_score(test_labels, test_preds_bin)
+
+    # For the bias metrics we need the additional identity columns from the test_dataframe. Therefore merge
+    # Test predictions back to dataframe.
+
+    test_results = test_df.merge(test_preds_bin, how='inner', on='id')
 
     # Compute the bias metrics dataframe and final weighted score
-    nn_bias_metrics_df_test = compute_bias_metrics_for_model(test_results, identity_columns, MODEL_NAME, TOXICITY_COLUMN)
-    nn_final_metric_test = get_final_metric(nn_bias_metrics_df_test, calculate_overall_auc(test_results, MODEL_NAME))
+    nn_bias_metrics_df_test = compute_bias_metrics_for_model(test_results, IDENTITY_COLUMNS, model_name, TEST_TARGET_COL)
+    nn_final_metric_test = get_final_metric(nn_bias_metrics_df_test, calculate_overall_auc(test_results, model_name))
 
-    results_df = pd.DataFrame(data=[[model_accuracy, model_precision, model_recall, model_f1, nn_final_metric_test]], index=['model_name'], 
+    results_df = pd.DataFrame(data=[[model_accuracy, model_precision, model_recall, model_f1, nn_final_metric_test]], index=[model_name], 
                                 columns=['model_accuracy','model_precision', 'model_recall', 'model_f1', 'final_weighted_bias'],
                             )
 
