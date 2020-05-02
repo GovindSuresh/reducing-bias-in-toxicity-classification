@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime, os
 import matplotlib.pyplot as plt
+import yaml
 
 #sklearn imports
 from sklearn.model_selection import train_test_split
@@ -307,20 +308,54 @@ def model_evaluation(test_preds, test_labels, test_df, model_name):
 
     return nn_bias_metrics_df_test, results_df
 
+# Set up parser
+def set_args():
+    parser = argparse.ArgumentParser(description='LSTM training script')
+    parser.add_argument('train_file', type=str, help='Filepath of the training csv file')
+    parser.add_argument('model_name', type=str, help='Name to give the trained model')
+    parser.add_argument('yml_filepath', type=str, help='Location of yml file with model parameters')
 
-    ## APP
 
+    return parser.parse_args()
+
+#app
 if __name__ == '__main__':
+
+    # Read in args
+    args = set_args()
+    TRAIN_FILE = args.train_file
+
+    # Read in YAML file
+    stream = open(YAML_FILE, 'r')
+    param_dict = yaml.load(stream)
+    
+    TRAIN_TEXT_COL = param_dict['TRAIN_TEXT_COL']
+    TEST_TEXT_COL = param_dict['TEST_TEXT_COL']
+    TRAIN_TARGET_COL = param_dict['TRAIN_TARGET_COL']
+    TEST_TARGET_COL = param_dict['TEST_TARGET_COL']
+    IDENTITY_COLS = 
+    
+    EMBEDDING_FILE = param_dict['EMEDDING_FILE']
+    EMBEDDING_DIMS = param_dict['EMEDDING_DIMS']
+    MAX_VOCAB_SIZE = param_dict['MAX_VOCAB_SIZE']
+    MAX_LEN_SEQ = param_dict['MAX_LEN_SEQ']
+
+    LSTM_UNITS = param_dict['LSTM_UNITS']
+    BATCH_SIZE = param_dict['BATCH_SIZE']
+    NUM_EPOCHS = param_dict['NUM_EPOCHS']
+    LEARNING_RATE = param_dict['LEARNING_RATE']
+
+    CHECKPOINT_PATH = param_dict['CHECKPOINT_PATH']
 
     # Load in data
     train_df = pd.read_csv(TRAIN_FILE)
 
     # Train val split
     # Create train val split, stratify on target - random state set to 1 for reproducibility, you can remove this
-    train_df, val_df = train_test_split(train_data, test_size=VAL_SIZE, stratify=train_df['target'], random_state=1)
+    train_df, val_df = train_test_split(train_df, test_size=VAL_SIZE, stratify=train_df['target'], random_state=1)
 
     # Train tokenizer
-    tokenizer = train_tokenizer(train_df, VOCAB_SIZE)
+    tokenizer = train_tokenizer(train_df, MAX_VOCAB_SIZE)
 
     # Model training
     model, history = train_model(train_df, val_df, tokenizer, MODEL_NAME)
