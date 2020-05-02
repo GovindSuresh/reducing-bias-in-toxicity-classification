@@ -307,6 +307,32 @@ def model_evaluation(test_preds, test_labels, test_df, model_name):
 
     return nn_bias_metrics_df_test, results_df
 
+
+    ## APP
+
+if __name__ == '__main__':
+
+    # Load in data
+    train_df = pd.read_csv(TRAIN_FILE)
+
+    # Train val split
+    # Create train val split, stratify on target - random state set to 1 for reproducibility, you can remove this
+    train_df, val_df = train_test_split(train_data, test_size=VAL_SIZE, stratify=train_df['target'], random_state=1)
+
+    # Train tokenizer
+    tokenizer = train_tokenizer(train_df, VOCAB_SIZE)
+
+    # Model training
+    model, history = train_model(train_df, val_df, tokenizer, MODEL_NAME)
+
+    # Final model save - saves full model using h5 format
+    model.save('NN_model/saved_model_h5/baseline-LSTM.h5')
+
+    # Model weight save
+    model.save_weights('NN_model/saved_weights_h5/baseline-LSTM.h5')
+
+
+
         
 
 
