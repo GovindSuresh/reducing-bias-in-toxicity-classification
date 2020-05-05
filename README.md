@@ -56,8 +56,13 @@ The final aim is to have the project in a form such that one could easily run th
 
 *22/04/19*
 
-- Write LSTM preprocessing script
-- Write ML model preprocessing script
+- ~~Write LSTM preprocessing script~~
+
+*04/05/19*
+
+- Write LSTM training script
+- Write LSTM inference script
+- Test pipeline end-to-end
 
 
 
