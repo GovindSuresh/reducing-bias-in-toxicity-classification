@@ -4,6 +4,7 @@ import numpy as np
 import datetime, os
 import matplotlib.pyplot as plt
 import yaml
+import argparse
 
 #sklearn imports
 from sklearn.model_selection import train_test_split
@@ -324,6 +325,8 @@ if __name__ == '__main__':
     # Read in args
     args = set_args()
     TRAIN_FILE = args.train_file
+    MODEL_NAME = args.model_name
+    YAML_FILE = args.yml_filepath
 
     # Read in YAML file
     stream = open(YAML_FILE, 'r')
@@ -333,12 +336,13 @@ if __name__ == '__main__':
     TEST_TEXT_COL = param_dict['TEST_TEXT_COL']
     TRAIN_TARGET_COL = param_dict['TRAIN_TARGET_COL']
     TEST_TARGET_COL = param_dict['TEST_TARGET_COL']
-    IDENTITY_COLS = 
+    IDENTITY_COLS = param_dict['IDENTITY_COLS']
     
     EMBEDDING_FILE = param_dict['EMEDDING_FILE']
     EMBEDDING_DIMS = param_dict['EMEDDING_DIMS']
     MAX_VOCAB_SIZE = param_dict['MAX_VOCAB_SIZE']
     MAX_LEN_SEQ = param_dict['MAX_LEN_SEQ']
+    VAL_SIZE = param_dict['VAL_SIZE']
 
     LSTM_UNITS = param_dict['LSTM_UNITS']
     BATCH_SIZE = param_dict['BATCH_SIZE']
@@ -346,6 +350,22 @@ if __name__ == '__main__':
     LEARNING_RATE = param_dict['LEARNING_RATE']
 
     CHECKPOINT_PATH = param_dict['CHECKPOINT_PATH']
+    MODEL_SAVE_PATH = param_dict['MODEL_SAVE_PATH']
+
+    # Make directories to save model files now
+    # This way if there is an error with file path we dont waste time with training first
+    # We aren't handling this error because we want the program to crash if the makedirs fails to force user
+    # to put in a correct file name
+    
+    if not os.path.isdir(os.path.join(MODEL_SAVE_PATH, MODEL_NAME)):
+        os.makedirs(os.path.join(MODEL_SAVE_PATH, MODEL_NAME))
+    else:
+        print('Subdirectory for the chosen model_name exists, model save will overwrite existing files')
+    
+    if not os.path.isdir(os.path.join(MODEL_SAVE_PATH,MODEL_NAME,'weights')):
+        os.makedirs(os.path.join(MODEL_SAVE_PATH, MODEL_NAME))
+    else:
+        print('Subdirectory for the chosen model_name exists, weights save will overwrite existing files')
 
     # Load in data
     train_df = pd.read_csv(TRAIN_FILE)
@@ -360,11 +380,15 @@ if __name__ == '__main__':
     # Model training
     model, history = train_model(train_df, val_df, tokenizer, MODEL_NAME)
 
-    # Final model save - saves full model using h5 format
-    model.save('NN_model/saved_model_h5/baseline-LSTM.h5')
+    # Final model save - saves full model using h5 format -- change
+    print(f'Saving model @ {os.path.join(MODEL_SAVE_PATH, MODEL_NAME)}')
+
+    model.save(os.path.join(MODEL_SAVE_PATH, MODEL_NAME,f'{MODEL_NAME}.h5', save_format='h5'))
 
     # Model weight save
-    model.save_weights('NN_model/saved_weights_h5/baseline-LSTM.h5')
+    model.save_weights(os.path.join(MODEL_SAVE_PATH, MODEL_NAME,'weights',f'{MODEL_NAME}_weights.h5', save_format='h5'))
+
+    
 
 
 

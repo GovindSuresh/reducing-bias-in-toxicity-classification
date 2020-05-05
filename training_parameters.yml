@@ -27,6 +27,8 @@
     LEARNING_RATE: 0.001
 
     CHECKPOINT_PATH: "NN_models/cp.ckpt"
+    MODEL_SAVE_PATH: "NN_models/trained_models"
+    WEIGHT_SAVE_PATH: "NN_models/trained_models"
     
 
 
