@@ -23,7 +23,7 @@ from tensorflow.keras.layers import Bidirectional, Dropout
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.metrics import AUC
-from tensorflow.keras.optimizer import Adam
+from tensorflow.keras.optimizers import Adam
 
 
 # File parameters
@@ -61,7 +61,7 @@ LEARNING_RATE = 0.001
 
 def train_tokenizer(train_data, vocab_size):
 
-    tokenizer = text.tokenizer(num_words = MAX_VOCAB_SIZE, filters='', split=' ', lower=False)
+    tokenizer = text.Tokenizer(num_words = MAX_VOCAB_SIZE, filters='', split=' ', lower=False)
     tokenizer.fit_on_texts(train_data)
 
     return tokenizer
@@ -81,7 +81,7 @@ def build_embedding_matrix(tokenizer_word_index, EMBEDDING_FILE):
     with open(EMBEDDING_FILE) as file:
 
         for line in file:
-            line.split(' ') # each word and vector is seperated by a whitespace
+            line = line.split(' ') # each word and vector is seperated by a whitespace
 
             word = line[0] #word is first part of the line
             word_vec = line[1:] #rest of line is word vector
@@ -101,12 +101,12 @@ def build_embedding_matrix(tokenizer_word_index, EMBEDDING_FILE):
         # checks if word index is outide max vocab size. If true we just continue
         if i >= MAX_VOCAB_SIZE:
             continue
-        
+
         # gets the vector to the corresponding word from the previous dictionary and sets it to the variable
         embedding_vector = embedding_dict.get(word)
         # We check whether the embedding_vector is not none (i.e the word was in the original embedding file)
         if embedding_vector is not None:
-            # Append the embedding vector to index i in the embedding matrix. 
+            # Append the embedding vector to index i in the embedding matrix.
             embedding_matrix[i] = embedding_vector
             
     return embedding_matrix
@@ -168,8 +168,8 @@ def train_model(train_df, val_df, tokenizer, model_name):
     print('padding text')
     X_train = text_padder(train_df[TRAIN_TEXT_COL], tokenizer)
     X_val = text_padder(val_df[TRAIN_TEXT_COL], tokenizer)
-    y_train = train_df[TRAIN_TARGET_COL]
-    y_val = val_df[TRAIN_TARGET_COL]
+    y_train = np.asarray(train_df[TRAIN_TARGET_COL])
+    y_val = np.asarray(val_df[TRAIN_TARGET_COL])
     
     print('building embedding matrix')
     # build embedding matrix
@@ -330,7 +330,7 @@ if __name__ == '__main__':
 
     # Read in YAML file
     stream = open(YAML_FILE, 'r')
-    param_dict = yaml.load(stream)
+    param_dict = yaml.load(stream, Loader=yaml.SafeLoader)
     
     TRAIN_TEXT_COL = param_dict['TRAIN_TEXT_COL']
     TEST_TEXT_COL = param_dict['TEST_TEXT_COL']
@@ -338,8 +338,8 @@ if __name__ == '__main__':
     TEST_TARGET_COL = param_dict['TEST_TARGET_COL']
     IDENTITY_COLS = param_dict['IDENTITY_COLS']
     
-    EMBEDDING_FILE = param_dict['EMEDDING_FILE']
-    EMBEDDING_DIMS = param_dict['EMEDDING_DIMS']
+    EMBEDDING_FILE = param_dict['EMBEDDING_FILE']
+    EMBEDDING_DIMS = param_dict['EMBEDDING_DIMS']
     MAX_VOCAB_SIZE = param_dict['MAX_VOCAB_SIZE']
     MAX_LEN_SEQ = param_dict['MAX_LEN_SEQ']
     VAL_SIZE = param_dict['VAL_SIZE']
@@ -363,19 +363,19 @@ if __name__ == '__main__':
         print('Subdirectory for the chosen model_name exists, model save will overwrite existing files')
     
     if not os.path.isdir(os.path.join(MODEL_SAVE_PATH,MODEL_NAME,'weights')):
-        os.makedirs(os.path.join(MODEL_SAVE_PATH, MODEL_NAME))
+        os.makedirs(os.path.join(MODEL_SAVE_PATH, MODEL_NAME, 'weights'))
     else:
         print('Subdirectory for the chosen model_name exists, weights save will overwrite existing files')
 
     # Load in data
-    train_df = pd.read_csv(TRAIN_FILE)
-
+    train_df = pd.read_csv(TRAIN_FILE, index_col=0)
+    train_df = train_df.dropna()
     # Train val split
     # Create train val split, stratify on target - random state set to 1 for reproducibility, you can remove this
     train_df, val_df = train_test_split(train_df, test_size=VAL_SIZE, stratify=train_df['target'], random_state=1)
 
     # Train tokenizer
-    tokenizer = train_tokenizer(train_df, MAX_VOCAB_SIZE)
+    tokenizer = train_tokenizer(train_df[TRAIN_TEXT_COL], MAX_VOCAB_SIZE)
 
     # Model training
     model, history = train_model(train_df, val_df, tokenizer, MODEL_NAME)
@@ -388,11 +388,4 @@ if __name__ == '__main__':
     # Model weight save
     model.save_weights(os.path.join(MODEL_SAVE_PATH, MODEL_NAME,'weights',f'{MODEL_NAME}_weights.h5', save_format='h5'))
 
-    
-
-
-
-        
-
-
-
+    print('Model saved!')
