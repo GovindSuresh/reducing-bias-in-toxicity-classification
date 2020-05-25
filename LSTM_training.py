@@ -5,6 +5,8 @@ import datetime, os
 import matplotlib.pyplot as plt
 import yaml
 import argparse
+import json
+import io
 
 #sklearn imports
 from sklearn.model_selection import train_test_split
@@ -165,18 +167,18 @@ def train_model(train_df, val_df, tokenizer, model_name):
     OBJ: model_hist - fit history
     '''
     # Create processed and padded train and targets
-    print('padding text')
+    print('Padding text...\n')
     X_train = text_padder(train_df[TRAIN_TEXT_COL], tokenizer)
     X_val = text_padder(val_df[TRAIN_TEXT_COL], tokenizer)
     y_train = np.asarray(train_df[TRAIN_TARGET_COL])
     y_val = np.asarray(val_df[TRAIN_TARGET_COL])
     
-    print('building embedding matrix')
+    print('Building embedding matrix...\n')
     # build embedding matrix
     embed_matrix = build_embedding_matrix(tokenizer.word_index, EMBEDDING_FILE)
     
     # build model
-    print('building model')
+    print('Building model...\n')
     model = build_model(embed_matrix, tokenizer, model_name)
     
     # set up checkpoint callbacks
@@ -187,7 +189,7 @@ def train_model(train_df, val_df, tokenizer, model_name):
     lr_schedule = tf.keras.callbacks.LearningRateScheduler(lr_scheduler, verbose=1)
    
     # train model batch size and epochs were set up earlier.
-    print('training model')
+    print('Training model...\n')
     model_hist = model.fit(X_train, y_train,
                              batch_size = BATCH_SIZE,
                              epochs = NUM_EPOCHS,
@@ -196,11 +198,6 @@ def train_model(train_df, val_df, tokenizer, model_name):
                              verbose = 1)
 
     return model, model_hist
-
-def process_test_data(test_data, tokenizer):
-
-    return text_padder(test_data, tokenizer)
-
     
 def model_evaluation(test_preds, test_labels, test_df, model_name):
     '''
@@ -389,3 +386,12 @@ if __name__ == '__main__':
     model.save_weights(os.path.join(MODEL_SAVE_PATH, MODEL_NAME,'weights',f'{MODEL_NAME}_weights.h5', save_format='h5'))
 
     print('Model saved!')
+
+    # Save the tokenizer with the model
+
+    print(f'Saving Tokenizer @ {os.path.join(MODEL_SAVE_PATH, MODEL_NAME)}' )
+    tokenizer_json = tokkenizer.to_json()
+    with io.open(os.path.join(MODEL_SAVE_PATH, MODEL_NAME,f'{MODEL_NAME}_tokenizer.json'), 'w', encoding='utf-8') as f:
+        f.write(json.dumps(tokenizer_json, ensure_ascii=False))
+
+    
