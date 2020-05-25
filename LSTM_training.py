@@ -198,113 +198,6 @@ def train_model(train_df, val_df, tokenizer, model_name):
                              verbose = 1)
 
     return model, model_hist
-    
-def model_evaluation(test_preds, test_labels, test_df, model_name):
-    '''
-    Evaluates the models against accuracy, F1 Score, and the final weighted bias metric as discussed in the project write-up
-    Inputs:
-    Array: test_preds - Predicted labels for the test set
-    Array: test_labels - True labels for the test set 
-    Dataframe:  test_df - test dataframe, needed for the final bias metric calculation
-
-    Outputs:
-    nn_bias_metrics_df_test = dataframe showing bias metric scores against the specific identify subgroups
-    results_df = dataframe of metrics for the model 
-        
-    '''
-    # Define subgroup metrics
-    SUBGROUP_AUC = 'subgroup_auc'
-    BPSN_AUC = 'bpsn_auc'  # stands for background positive, subgroup negative
-    BNSP_AUC = 'bnsp_auc'  # stands for background negative, subgroup positive
-
-    # These calculations have been provided by Jigsaw AI for scoring based on the metrics of the kaggle competition
-    # https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification/overview/evaluation
-
-    # They work by filtering the relevant dataframe into specific subgroups and using the roc_auc_score metric from sklearn.
-
-    def compute_auc(y_true, y_pred):
-        try:
-            return roc_auc_score(y_true, y_pred)
-        except ValueError:
-            return np.nan
-
-    def compute_subgroup_auc(df, subgroup, label, model_name):
-        subgroup_examples = df[df[subgroup]]
-        return compute_auc(subgroup_examples[label], subgroup_examples[model_name])
-
-    def compute_bpsn_auc(df, subgroup, label, model_name):
-        """Computes the AUC of the within-subgroup negative examples and the background positive examples."""
-        subgroup_negative_examples = df.loc[df[subgroup] & ~df[label]]
-        non_subgroup_positive_examples = df.loc[~df[subgroup] & df[label]]
-        examples = subgroup_negative_examples.append(non_subgroup_positive_examples)
-        return compute_auc(examples[label], examples[model_name])
-
-    def compute_bnsp_auc(df, subgroup, label, model_name):
-        """Computes the AUC of the within-subgroup positive examples and the background negative examples."""
-        subgroup_positive_examples = df.loc[df[subgroup] & df[label]]
-        non_subgroup_negative_examples = df.loc[~df[subgroup] & ~df[label]]
-        examples = subgroup_positive_examples.append(non_subgroup_negative_examples)
-        return compute_auc(examples[label], examples[model_name])
-
-    def compute_bias_metrics_for_model(dataset,
-                                    subgroups,
-                                    model,
-                                    label_col,
-                                    include_asegs=False):
-        """Computes per-subgroup metrics for all subgroups and one model."""
-        records = []
-        for subgroup in subgroups:
-            record = {
-                'subgroup': subgroup,
-                'subgroup_size': len(dataset.loc[dataset[subgroup]])
-            }
-            record[SUBGROUP_AUC] = compute_subgroup_auc(dataset, subgroup, label_col, model)
-            record[BPSN_AUC] = compute_bpsn_auc(dataset, subgroup, label_col, model)
-            record[BNSP_AUC] = compute_bnsp_auc(dataset, subgroup, label_col, model)
-            records.append(record)
-        return pd.DataFrame(records).sort_values('subgroup_auc', ascending=True)
-
-    def calculate_overall_auc(df, model_name):
-        true_labels = df[TEST_TARGET_COL]
-        predicted_labels = df[model_name]
-        return roc_auc_score(true_labels, predicted_labels)
-
-    def power_mean(series, p):
-        total = sum(np.power(series, p))
-        return np.power(total / len(series), 1 / p)
-
-    def get_final_metric(bias_df, overall_auc, POWER=-5, OVERALL_MODEL_WEIGHT=0.25):
-        bias_score = np.average([
-            power_mean(bias_df[SUBGROUP_AUC], POWER),
-            power_mean(bias_df[BPSN_AUC], POWER),
-            power_mean(bias_df[BNSP_AUC], POWER)
-        ])
-        return (OVERALL_MODEL_WEIGHT * overall_auc) + ((1 - OVERALL_MODEL_WEIGHT) * bias_score)
-    
-    # Binarize the y_predictions:
-
-    test_preds_bin = np.where(test_preds >=0.5, 1, 0)
-
-    # Compute standard metrics 
-    model_accuracy = accuracy_score(test_labels,test_preds_bin)
-    model_precision = precision_score(test_labels, test_preds_bin)
-    model_recall = recall_score(test_labels,test_preds_bin)
-    model_f1 = f1_score(test_labels, test_preds_bin)
-
-    # For the bias metrics we need the additional identity columns from the test_dataframe. Therefore merge
-    # Test predictions back to dataframe.
-
-    test_results = test_df.merge(test_preds_bin, how='inner', on='id')
-
-    # Compute the bias metrics dataframe and final weighted score
-    nn_bias_metrics_df_test = compute_bias_metrics_for_model(test_results, IDENTITY_COLUMNS, model_name, TEST_TARGET_COL)
-    nn_final_metric_test = get_final_metric(nn_bias_metrics_df_test, calculate_overall_auc(test_results, model_name))
-
-    results_df = pd.DataFrame(data=[[model_accuracy, model_precision, model_recall, model_f1, nn_final_metric_test]], index=[model_name], 
-                                columns=['model_accuracy','model_precision', 'model_recall', 'model_f1', 'final_weighted_bias'],
-                            )
-
-    return nn_bias_metrics_df_test, results_df
 
 # Set up parser
 def set_args():
@@ -319,11 +212,7 @@ def set_args():
 #app
 if __name__ == '__main__':
 
-    # Read in args
-    args = set_args()
-    TRAIN_FILE = args.train_file
-    MODEL_NAME = args.model_name
-    YAML_FILE = args.yml_filepath
+    
 
     # Read in YAML file
     stream = open(YAML_FILE, 'r')

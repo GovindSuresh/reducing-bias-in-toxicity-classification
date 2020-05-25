@@ -9,6 +9,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import json
+import os
+import argparse
+import yaml
 
 # Sklearn imports
 from sklearn.metrics import accuracy_score
@@ -20,6 +24,8 @@ from sklearn.metrics import roc_auc_score
 # TensorFlow imports 
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import text, sequence
+
 
 def text_padder(text, tokenizer):
 
@@ -132,7 +138,33 @@ def model_evaluation(test_preds, test_labels, test_df, model_name):
 
     return nn_bias_metrics_df_test, results_df
 
+# Set up parser
+def set_args():
+    parser = argparse.ArgumentParser(description='LSTM training script')
+    parser.add_argument('test_file', type=str, help='Filepath of the clean test csv file')
+    parser.add_argument('tokenizer_path', type=str, help='Filepath of the tokenizer for the model to be evaluated')
+    parser.add_argument('model_path', type=str, help='Path to the model .h5 file to load ')
+    parser.add_argument('model_name', type=str, help='Name to give the trained model')
+    parser.add_argument('yml_filepath', type=str, help='Location of yml file with model parameters')
+
+    return parser.parse_args()
+
 if __name__ == '__main__':
+
+    # Read in args
+    ARGS = set_args()
+    TEST_FILE = ARGS.test_file
+    TOKENIZER_PATH = ARGS.tokenizer_path
+    MODEL_PATH = ARGS.model_path
+    MODEL_NAME = ARGS.model_name
+    YAML_FILE = ARGS.yml_filepath
+
+    # Pulling in relevant yaml arguments
+    stream = open(YAML_FILE, 'r')
+    param_dict = yaml.load(stream, Loader=yaml.SafeLoader)
+
+    TEST_TEXT_COL = param_dict['TEST_TEXT_COL']
+    TEST_TARGET_COL = param_dict['TEST_TARGET_COL']
 
     print("Loading Model \n")
     # Load in the model
@@ -155,5 +187,6 @@ if __name__ == '__main__':
     # Get model predictions
     y_preds = model.predict(X_test)
 
-    
-    
+    # Calculate scores and generate dataframes
+    bias_metrics_df, results_df = model_evaluation(y_preds, test_df[TEST_TARGET_COL], test_df, MODEL_NAME)
+        
